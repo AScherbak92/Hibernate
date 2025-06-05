@@ -7,9 +7,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
+import org.hibernate.Transaction;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -144,8 +143,8 @@ public class CRUD {
         }
     }
 
-    /*Filtering records from Ship table. (All records with year bigger than arg)*/
-    public static List<Ship> shipFiltering(LocalDate arg){
+    /*Criteria API selection - All records in table Ship with year bigger than arg*/
+    public static List<Ship> shipDateSelection(LocalDate arg){
         EntityManager entityManager = emf.createEntityManager();
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Ship> cq = cb.createQuery(Ship.class);
@@ -154,5 +153,59 @@ public class CRUD {
         cq.select(ship).where(cb.greaterThan(ship.get("constructionDate"), arg));
 
         return entityManager.createQuery(cq).getResultList();
+    }
+
+    /*Criteria API selection - All records in table Ship with captain older than arg*/
+    public static List<Ship> shipCaptainAgeSelection(Integer arg){
+        EntityManager entityManager = emf.createEntityManager();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Ship> cq = cb.createQuery(Ship.class);
+        Root<Ship> ship = cq.from(Ship.class);
+
+        Join<Ship, Captain> captain = ship.join("captain");
+
+        Predicate captainOlderThanArg = cb.greaterThan(captain.get("age"), arg);
+        cq.select(ship).where(captainOlderThanArg);
+
+        return entityManager.createQuery(cq).getResultList();
+    }
+
+    /*Criteria API updating - increasing experience for all captains with age > 30*/
+    public static List<Captain> increaseCaptainExperience(){
+        EntityManager entityManager = emf.createEntityManager();
+        EntityTransaction transaction = entityManager.getTransaction();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<Captain> cu = cb.createCriteriaUpdate(Captain.class);
+        CriteriaQuery<Captain> cq;
+        Root<Captain> selectRoot;
+        Root<Captain> updateRoot = cu.from(Captain.class);
+
+        transaction.begin();
+        cu.set("experience", cb.sum(updateRoot.get("experience"), 1))
+                .where(cb.gt(updateRoot.get("age"), 30));
+        entityManager.createQuery(cu).executeUpdate();
+
+        cq = cb.createQuery(Captain.class);
+        selectRoot = cq.from(Captain.class);
+        cq.select(selectRoot);
+
+        transaction.commit();
+
+        return entityManager.createQuery(cq).getResultList();
+    }
+
+    /*Criteria API deleting - deleting captain from Captain table by given arg (name of the captain)*/
+    public static void deleteCaptainByName(String arg){
+        EntityManager entityManager = emf.createEntityManager();
+        EntityTransaction transaction = entityManager.getTransaction();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaDelete<Captain> cd = cb.createCriteriaDelete(Captain.class);
+        Root<Captain> root = cd.from(Captain.class);
+
+        cd.where(cb.equal(root.get("name"), arg));
+
+        transaction.begin();
+        entityManager.createQuery(cd).executeUpdate();
+        transaction.commit();
     }
 }

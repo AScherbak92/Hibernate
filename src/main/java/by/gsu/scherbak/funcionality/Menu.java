@@ -34,7 +34,7 @@ public class Menu {
                     "\n2 - Update an existing record in the table" +
                     "\n3 - Read records from the table" +
                     "\n4 - Delete records from the table" +
-                    "\n5 - Criteria" +
+                    "\n5 - Selection with Criteria API" +
                     "\n6 - Exit");
 
             userChoice = scanner.nextInt();
@@ -71,9 +71,9 @@ public class Menu {
                 case 4:
                     deleteRecords(tableChoice);
                     break;
-                //Selecting records by criteria
+                //Showing menu for criteria selections
                 case 5:
-                    criteria(tableChoice);
+                    criteriaSelectionMenu(tableChoice);
                     break;
                 default:
                     System.out.println("Invalid input...");
@@ -275,18 +275,76 @@ public class Menu {
         }
     }
 
-    /*Method for Criteria API*/
-    public static void criteria(Integer tableChoice){
+    /*Method for showing menu with choosing selections for tables*/
+    public static void criteriaSelectionMenu(Integer tableChoice){
         String userInput;                           //Variable for user input
-        List<Ship> ships;
 
         switch(tableChoice){
+            //Selections with table Ship
             case 1:
-                System.out.println("Show all ships with date bigger than (YYYY-MM-DD): ");
+                System.out.println("Selections for table Ship:" +
+                        "\n1 - Select all ships with date bigger than (INPUT) date. " +
+                        "\n2 - Select all ships whose captain is older than (INPUT) age.");
+
+                userInput = scanner.nextLine();
+                shipSelections(Integer.parseInt(userInput));
+                break;
+            //Selections with table Ship_captain
+            case 2:
+                System.out.println("Selections for table Captain_sihp:" +
+                        "\n1 - Increase the experience age for captains older than 30" +
+                        "\n2 - Delete captains by name");
+
+                userInput = scanner.nextLine();
+                captainSelections(Integer.parseInt(userInput));
+                break;
+        }
+    }
+
+    /*This method invokes Criteria API selection methods from CRUD by given arg for Captain table*/
+    public static void captainSelections(Integer selectionNumber){
+        String userInput;                           //Variable for user input
+        List<Captain> captains;                     //List of returned ships
+
+        switch(selectionNumber){
+            case 1:
+                System.out.println("Increasing age experience for all captains with age > 30");
+
+                captains = CRUD.increaseCaptainExperience();
+                break;
+            case 2:
+                System.out.println("Enter the name: ");
                 userInput = scanner.nextLine();
 
-                ships = CRUD.shipFiltering(LocalDate.parse(userInput));
+                CRUD.deleteCaptainByName(userInput);
+
+                System.out.println("The captain was deleted!");
+                break;
+        }
+    }
+
+    /*This method invokes Criteria API selection methods from CRUD by given arg for Ship table*/
+    public static void shipSelections(Integer selectionNumber){
+        String userInput;                           //Variable for user input
+        List<Ship> ships;                           //List of returned ships
+
+        switch(selectionNumber){
+            //Select all ships with date bigger than userInput
+            case 1:
+                System.out.println("Enter the date (YYYY-MM-DD): ");
+                userInput = scanner.nextLine();
+
+                ships = CRUD.shipDateSelection(LocalDate.parse(userInput));
                 ships.forEach(System.out::println);
+                break;
+            //Select all ships with captain older than userInput
+            case 2:
+                System.out.println("Enter the age: ");
+                userInput = scanner.nextLine();
+
+                ships = CRUD.shipCaptainAgeSelection(Integer.parseInt(userInput));
+                ships.forEach(System.out::println);
+                break;
         }
     }
 }
